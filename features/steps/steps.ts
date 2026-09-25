@@ -10,6 +10,7 @@ import {
 import * as nodeDomain from '../../src/node/index.js'
 import {
   DeepgramNamespace,
+  DeepgramAuthenticationType,
   SpeechToTextMode,
   SpeechToTextResponse,
 } from '../../src/types.js'
@@ -42,6 +43,10 @@ Given(
 When(
   'we transcribe the fixture with Deepgram in prerecorded mode',
   async function (this: World) {
+    if (!process.env.DEEPGRAM_API_KEY) {
+      throw new Error('DEEPGRAM_API_KEY is required for integration tests')
+    }
+
     const system = await loadSystem({
       environment: 'test',
       config: {
@@ -55,8 +60,11 @@ When(
             logLevel: LogLevelNames.silent,
           },
         },
-        logging: {
-          consoleLogging: false,
+        [DeepgramNamespace.node]: {
+          authentication: {
+            type: DeepgramAuthenticationType.apiKey,
+            apiKey: process.env.DEEPGRAM_API_KEY!,
+          },
         },
       },
     })

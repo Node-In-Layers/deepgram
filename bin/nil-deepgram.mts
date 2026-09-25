@@ -38,44 +38,56 @@ const _parseArguments = () => {
     action: 'version',
     version: _getDeepgramVersion(),
   })
-  parser.add_argument('filePath', {
+  const subparsers = parser.add_subparsers({
+    dest: 'command',
+    title: 'commands',
+  })
+  const speechToText = subparsers.add_parser('speech-to-text', {
+    help: 'Transcribe an audio file using Deepgram.',
+  })
+  speechToText.add_argument('filePath', {
     help: 'Path to the audio file to transcribe.',
   })
-  parser.add_argument('-k', '--api-key', {
+  speechToText.add_argument('-k', '--api-key', {
     help: 'Deepgram API Key. Defaults to DEEPGRAM_API_KEY environment variable.',
     dest: 'apiKey',
   })
-  parser.add_argument('-t', '--access-token', {
+  speechToText.add_argument('-t', '--access-token', {
     help: 'Deepgram Access Token. Defaults to DEEPGRAM_ACCESS_TOKEN environment variable.',
     dest: 'accessToken',
   })
-  parser.add_argument('-m', '--mode', {
+  speechToText.add_argument('-m', '--mode', {
     choices: ['prerecorded', 'realtime'],
     default: 'prerecorded',
     help: 'Transcription mode (prerecorded or realtime). Defaults to prerecorded.',
   })
-  parser.add_argument('-o', '--options', {
+  speechToText.add_argument('-o', '--options', {
     help: 'Stringified JSON for additional Deepgram options.',
   })
-  parser.add_argument('-j', '--json', {
+  speechToText.add_argument('-j', '--json', {
     action: 'store_true',
     default: false,
     help: 'Output results as JSON so they can be piped.',
     dest: 'json',
   })
-  parser.add_argument('-l', '--log-level', {
+  speechToText.add_argument('-l', '--log-level', {
     choices: Object.values(LogLevelNames),
     default: LogLevelNames.silent,
     help: 'Sets the log level for Node In Layers logging. Defaults to silent.',
     dest: 'logLevel',
   })
-  parser.add_argument('-f', '--log-format', {
+  speechToText.add_argument('-f', '--log-format', {
     choices: Object.values(LogFormat),
     default: LogFormat.simple,
     help: 'Sets the log format for Node In Layers logging. Defaults to simple.',
     dest: 'logFormat',
   })
-  return parser.parse_args()
+  const args = parser.parse_args()
+  if (!args.command) {
+    parser.print_help()
+    return
+  }
+  return args
 }
 
 const _getConfig = (args: any) => {
@@ -93,12 +105,7 @@ const _getConfig = (args: any) => {
   }
 }
 
-const main = async () => {
-  const args = _parseArguments()
-  if (!args) {
-    return
-  }
-
+const _speechToText = async (args: any) => {
   const filePath = path.resolve(args.filePath)
   if (!fs.existsSync(filePath)) {
     console.error(`Error: File not found at ${filePath}`)
@@ -162,6 +169,21 @@ const main = async () => {
     console.info(result.transcript)
   } else {
     console.info(JSON.stringify(result, null, 2))
+  }
+}
+
+const main = async () => {
+  const args = _parseArguments()
+  if (!args) {
+    return
+  }
+
+  switch (args.command) {
+    case 'speech-to-text':
+      return _speechToText(args)
+    default:
+      console.error(`Unknown command: ${args.command}`)
+      process.exit(1)
   }
 }
 

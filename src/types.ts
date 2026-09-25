@@ -22,19 +22,29 @@ export enum SpeechToTextMode {
   prerecorded = 'prerecorded',
 }
 
+export const deepgramApiKeySchema = z.object({
+  type: z.literal(DeepgramAuthenticationType.apiKey),
+  apiKey: z.string().min(1),
+})
+
+export const deepgramAccessTokenSchema = z.object({
+  type: z.literal(DeepgramAuthenticationType.accessToken),
+  accessToken: z.string().min(1),
+})
+
 export const deepgramAuthenticationSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal(DeepgramAuthenticationType.apiKey),
-    apiKey: z.string().min(1),
-  }),
-  z.object({
-    type: z.literal(DeepgramAuthenticationType.accessToken),
-    accessToken: z.string().min(1),
-  }),
+  deepgramApiKeySchema,
+  deepgramAccessTokenSchema,
 ])
 
 export type DeepgramAuthentication = z.infer<
   typeof deepgramAuthenticationSchema
+>
+
+export type DeepgramApiKeyAuthentication = z.infer<typeof deepgramApiKeySchema>
+
+export type DeepgramAccessTokenAuthentication = z.infer<
+  typeof deepgramAccessTokenSchema
 >
 
 export type DeepgramDomainConfig = Readonly<{

@@ -5,6 +5,9 @@ import {
   SpeechToTextMode,
   SpeechToTextResponse,
   SharedSpeechToTextProps,
+  DeepgramApiKeyAuthentication,
+  DeepgramAuthentication,
+  DeepgramAccessTokenAuthentication,
 } from '../types.js'
 import {
   DeepgramPrerecordedProps,
@@ -14,9 +17,6 @@ import {
 } from './types.js'
 
 const defaultRealtimeChunkSize = 64 * 1024
-const deepgramApiKeyEnvironmentVariableName = 'DEEPGRAM_API_KEY'
-const deepgramAccessTokenEnvironmentVariableName = 'DEEPGRAM_ACCESS_TOKEN'
-
 const defaultPrerecordedOptions: Record<string, unknown> = {
   model: 'nova-3',
   smart_format: true,
@@ -99,46 +99,29 @@ const formatPrerecordedTranscript = (alternative: any): string => {
   return chunkTextIntoParagraphs(rawTranscript).join('\n\n')
 }
 
-const getEnvironmentVariable = (name: string) => {
-  if (typeof process === 'undefined') {
-    return undefined
+const _isAuthentication = (
+  authentication?: DeepgramAuthentication
+): authentication is
+  DeepgramApiKeyAuthentication | DeepgramAccessTokenAuthentication => {
+  if (!authentication) {
+    return false
   }
-
-  return process.env[name]
+  return (
+    authentication.type === DeepgramAuthenticationType.apiKey ||
+    authentication.type === DeepgramAuthenticationType.accessToken
+  )
 }
 
 const create = (
   props?: Readonly<{ configuration?: DeepgramDomainConfig }>
 ): InternalFeatures => {
   const getAuthenticatedClient = async (
-    args?: GetAuthenticatedClientProps
+    _args?: GetAuthenticatedClientProps
   ): Promise<DeepgramClient> => {
-    const accessTokenFromEnvironment = getEnvironmentVariable(
-      deepgramAccessTokenEnvironmentVariableName
-    )
-    const apiKeyFromEnvironment = getEnvironmentVariable(
-      deepgramApiKeyEnvironmentVariableName
-    )
     const authentication =
-      args?.authentication ??
-      props?.configuration?.authentication ??
-      (accessTokenFromEnvironment
-        ? {
-            type: DeepgramAuthenticationType.accessToken,
-            accessToken: accessTokenFromEnvironment,
-          }
-        : undefined) ??
-      (apiKeyFromEnvironment
-        ? {
-            type: DeepgramAuthenticationType.apiKey,
-            apiKey: apiKeyFromEnvironment,
-          }
-        : undefined)
-
-    if (!authentication) {
-      throw new Error(
-        `Deepgram authentication is required. Set ${deepgramAccessTokenEnvironmentVariableName} or ${deepgramApiKeyEnvironmentVariableName}, or configure authentication explicitly.`
-      )
+      _args?.authentication ?? props?.configuration?.authentication
+    if (!_isAuthentication(authentication)) {
+      throw new Error('Invalid Deepgram authentication configuration.')
     }
 
     const clientOptions =
