@@ -11,6 +11,8 @@ jobs:
   checks:
     name: Checks (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    env:
+      DEEPGRAM_API_KEY: ${{ secrets.DEEPGRAM_API_KEY }}
     strategy:
       matrix:
         node-version: [22.x, 24.x]
