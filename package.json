@@ -1,7 +1,7 @@
 {
   "name": "@node-in-layers/deepgram",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Node In Layers Package that wraps the Deepgram SDK making it available to node in layers applications.",
   "main": "index.js",
   "bin": {
