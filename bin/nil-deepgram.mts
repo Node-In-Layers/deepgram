@@ -105,6 +105,23 @@ const _getConfig = (args: any) => {
   }
 }
 
+const _getAuthentication = (args: any) => {
+  const apiKey = args.apiKey || process.env.DEEPGRAM_API_KEY
+  const accessToken = args.accessToken || process.env.DEEPGRAM_ACCESS_TOKEN
+
+  return apiKey
+    ? {
+        type: DeepgramAuthenticationType.apiKey,
+        apiKey,
+      }
+    : accessToken
+      ? {
+          type: DeepgramAuthenticationType.accessToken,
+          accessToken,
+        }
+      : undefined
+}
+
 const _speechToText = async (args: any) => {
   const filePath = path.resolve(args.filePath)
   if (!fs.existsSync(filePath)) {
@@ -112,17 +129,14 @@ const _speechToText = async (args: any) => {
     process.exit(1)
   }
 
-  const authentication = args.apiKey
-    ? {
-        type: DeepgramAuthenticationType.apiKey,
-        apiKey: args.apiKey,
-      }
-    : args.accessToken
-      ? {
-          type: DeepgramAuthenticationType.accessToken,
-          accessToken: args.accessToken,
-        }
-      : undefined
+  const authentication = _getAuthentication(args)
+
+  if (!authentication) {
+    console.error(
+      'Error: Provide --api-key, --access-token, DEEPGRAM_API_KEY, or DEEPGRAM_ACCESS_TOKEN.'
+    )
+    process.exit(1)
+  }
 
   const extraOptions = args.options
     ? (() => {
